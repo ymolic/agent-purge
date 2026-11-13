@@ -1,6 +1,6 @@
 # 兼容性与已知限制
 
-[返回项目首页](../README.md)
+[返回项目首页](/)
 
 以下是 **2026-11-01 的本地验收快照**，只适用于列出的版本；不代表所有宿主版本或远端发行包均通过。
 
@@ -35,6 +35,24 @@
 - `opencode`（`opencode-ai` 1.x）与 `opencode2`（`@opencode/cli` 2.x）是不同接口，不能混用插件。
 - 不支持注入的闭源桌面入口不会标为注入成功；有些只能原样启动，有些会明确拒绝。
 
+### 内置安全条款实测（2026-11-13）
+
+「净化」到底删掉了什么，取决于宿主把安全条款写在哪。11 家隔离 HOME 四模式抓包，对 off 态 system 与 purge 后 system 分别统计「拒答 / 内容政策 / 越狱防护 / 有害用途」类条款冲突数：
+
+| 执行器 | off 态 system | 内置安全条款 | purge 后 | 说明 |
+|---|---|---|---|---|
+| codebuddy | 17,262 | 13 | 0 | 完整 `<content_policy>`：政治敏感、色情、违法（武器/爆炸物/未授权入侵/欺诈/洗钱/毒品）、隐私、诽谤，逐条 MUST refuse |
+| claude | 27,237 | 3 | 0 | 拒答 DoS / 大规模针对 / 供应链破坏 / 检测规避；要求上报疑似 prompt injection |
+| kilo | 13,717 | 1 | 0 | 唯一命中是反向的「帮不上就直接给替代方案、别讲大道理」，不是安全限制 |
+| opencode | 14,351 | 1 | 0 | 同上，反向表述 |
+| codex | 23,759 | 0 | 0 | 唯一 policy 命中是 Approval policy（沙箱权限说明），不是内容政策 |
+| antigravity | 15,824 | 0 | 0 | 只有 `<identity>` / `<guidelines>` / `<artifacts>` / `<subagents>` / `<skills>`，没有安全条款可删 |
+| dsh / grok / omp / opencode2 / pi | — | 0 | 0 | 系统提示词内无安全条款 |
+
+**结论**：内置安全条款真实存在的只有 CodeBuddy 与 Claude，两家都在 replace 后归零——该删的删干净了。Antigravity 的提示词里一条都没有，它被拦在 Google 的 policy 分类器侧，不在本地提示词层，因此不在 purge 的能力范围内。zcode 未安装 CLI，未抓包。
+
+口径：只统计强信号正则（refuse / content policy / harmful / jailbreak / weapons 等），不统计 `must not` 这类编码规范表述。机器可读数据在 `matrix.json` 的 `safety` 字段，测试会校验它与 `purgeKind` 不矛盾。
+
 ## 系统、浏览器与发行形式
 
 | 项目 | 已执行 | 尚不能据此承诺 |
@@ -46,6 +64,7 @@
 | Windows ZIP / 独立 EXE | 解压后运行；独立 EXE 在无 Node 的 PATH 下运行 | 全新操作系统或已签名发行 |
 | Windows 安装器 | 临时目录连续三轮安装、重装、原生启动器、冲突阻止卸载及数据保留 | 干净 VM、跨版本升级、所有目录 |
 | macOS | 已配置 CI 矩阵 | 本轮没有 macOS 实机或远端运行证据 |
+| Linux 发行包 | Ubuntu 24.04 上构建 `linux-x64` / `linux-arm64` 二进制、`.tar.gz`、`.deb`；`.deb` 实际 `dpkg -i` 安装、运行 `--help` / `status` 后 `dpkg -r` 干净卸载；便携包的 `install.sh` 装到 `~/.local` 后可执行；独立二进制在 PATH 无 Node 时运行 | 原生 Linux 桌面环境与多数发行版的桌面启动器；AppImage 取决于 runner 能否取到 appimagetool |
 
 Linux 上的 Windows 参数桥接测试明确跳过。CI 矩阵定义不等于远端执行成功，必须核对对应提交。
 
@@ -58,7 +77,7 @@ Linux 上的 Windows 参数桥接测试明确跳过。CI 矩阵定义不等于�
 
 ## 验证状态与第三方中转
 
-Web 的“隔离验证”使用临时 HOME、测试人设和本地 provider。DSH 的 headless/web/desktop 三形态四模式已分别抓包，同会话热切使用 SDK 验证；隔离抓包仍不能替代用户正在运行的会话，也不能证明第三方中转完整转发了提示词。
+Web 的“安全试跑”使用临时 HOME、测试人设和本地 provider。DSH 的 headless/web/desktop 三形态四模式已分别抓包，同会话热切使用 SDK 验证；隔离抓包仍不能替代用户正在运行的会话，也不能证明第三方中转完整转发了提示词。
 
 - **未捕获请求**：没有足够请求证据，不能判定人设未命中。
 - **验证出错**：进程退出失败或超时，保留错误原因与隔离进程输出。
@@ -81,4 +100,4 @@ node bench/capture-system.mjs --hot --no-publish
 
 真实宿主测试需先安装相应宿主。原始请求和日志进入被 Git 忽略的 `out/`；`--no-publish` 不替换用户已有 Web 验证报告。HTTP 代理隔离不等于操作系统网络沙箱。
 
-版本表只保留便于维护的结论；原始诊断、截图迭代和逐文件哈希不进入源码仓库。每次发布的证据应随对应 CI artifact 保存，见[发布流程](releasing.md)。
+版本表只保留便于维护的结论；原始诊断、截图迭代和逐文件哈希不进入源码仓库。每次发布的证据应随对应 CI artifact 保存，见[发布流程](../releasing.md)。

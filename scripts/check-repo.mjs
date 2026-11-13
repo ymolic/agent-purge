@@ -13,7 +13,7 @@ const BINARY_OUTPUT = /\.(?:exe|dll|tgz|zip|log|pyc)$/i;
 export function publicationProblem(file, { distribution = false, size = 0 } = {}) {
   const name = file.replaceAll('\\', '/');
   if (PRIVATE_ROOTS.test(name) || GENERATED.test(name) ||
-      /^(?:state\.json|\.build-entry\.mjs)$/.test(name) ||
+      /^(?:state\.json|\.build-entry\.mjs|\.build-linux-entry\.mjs)$/.test(name) ||
       /^web\/shots\//.test(name) || /^docs\/evidence\//.test(name) ||
       name === 'magpie-plugin/page/personas.js') return '本机数据或生成产物';
   if (/(?:^|\/)\.env(?:\..*)?$/.test(name) && !name.endsWith('.env.example')) return '本地环境变量文件';
@@ -52,6 +52,9 @@ export function checkDocumentationLinks(files, root = ROOT) {
     for (const match of text.matchAll(/!?\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) {
       const href = match[1].replace(/^<|>$/g, '');
       if (/^[a-z][\w+.-]*:/i.test(href) || href.startsWith('//')) continue;
+// 站内绝对路由（/guide/x、/images/y.png）：文档站的死链由 `npm run docs:build`
+      // 的 dead-link 检查负责，这里不重复解析成文件系统路径。
+      if (href.startsWith('/')) continue;
       let target, fragment;
       try { [target, fragment] = href.split('#').map(decodeURIComponent); }
       catch { errors.push(`${file}: 无效链接 ${href}`); continue; }

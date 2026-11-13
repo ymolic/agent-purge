@@ -30,7 +30,10 @@ magpie plugin options magpie-plugin '{"mode":"append"}'
 |---|---|
 | `mode` | `off` / `strict` / `replace` / `append` |
 | `persona` | 人设标识 |
-| `agents` | 限定执行器，例如 `["claude","codex"]` |
+| `agents` | 限定生效的执行器（白名单），例如 `["claude","codex"]` |
+| `disabledAgents` | 排除的执行器（跳过放行），例如 `["claude"]` |
+
+插件管理页提供可视化生效范围配置（全部生效 / 仅勾选生效 / 排除勾选），预置常用 Agent 并支持自定义添加，无需手动在 CLI 下修改 JSON 选项。
 
 `off` 不改请求；`strict` 替换可控 system 文本；`replace` 近似删除身份行后放入人设；`append` 将人设置于宿主文本**之前**，与 CLI 的后置位置不同。
 
@@ -41,4 +44,4 @@ magpie plugin options magpie-plugin '{"mode":"append"}'
 - 插件页不能直接读取本地文件，人设列表由生成脚本提供。
 - `npm test` 包含钩子与页面逻辑回归，不依赖 magpie；这些测试不等于所有 magpie 版本的真实安装验收。
 
-[主项目](../README.md) · [使用指南](../docs/usage.md)
+[主项目](../README.md) · [使用指南](../docs/reference/cli.md)

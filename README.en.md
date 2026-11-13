@@ -1,5 +1,9 @@
 <div align="center">
 
+<p>
+  <img src="web/assets/logo.svg" width="68" height="68" alt="agent-purge logo" />
+</p>
+
 # agent-purge
 
 **One persona to govern multiple coding agents.**
@@ -16,7 +20,7 @@ English | [日本語](README.ja.md) | [简体中文](README.md)
   </a>
 </p>
 
-[Quick Start](#quick-start) · [Personas & Modes](#personas-and-modes) · [Application Scopes](#application-scopes) · [Supported Harnesses](#supported-harnesses) · [Pause & Uninstall](#pause-and-uninstall) · [Legal & Disclaimer](#legal-and-disclaimer)
+[Docs](https://zichuanlan.github.io/agent-purge/en/) · [Quick Start](#quick-start) · [Personas & Modes](#personas-and-modes) · [Application Scopes](#application-scopes) · [Supported Harnesses](#supported-harnesses) · [Pause & Uninstall](#pause-and-uninstall) · [Legal & Disclaimer](#legal-and-disclaimer)
 
 </div>
 
@@ -53,6 +57,10 @@ The default console runs at `http://127.0.0.1:7788`. On first launch, it will no
 
 ![agent-purge Console](docs/images/console-desktop.png)
 
+![agent-purge Tool Inspector](docs/images/console-detail.png)
+
+![agent-purge Project Rules](docs/images/project-rules.png)
+
 <details>
 <summary>Other Installation Methods: Windows Installer, Portable Package, Headless Environments</summary>
 
@@ -62,6 +70,10 @@ The default console runs at `http://127.0.0.1:7788`. On first launch, it will no
 | `agent-purge-<version>-setup.exe` | Windows, external Node.js 20+ | GUI installer and uninstaller |
 | `agent-purge-<version>.zip` | Windows, external Node.js 20+ | Portable archive |
 | `agent-purge.exe` | Windows x64, standalone runtime | Fully self-contained portable executable without Node installed |
+| `agent-purge-<version>-linux-x64` / `-linux-arm64` | Major Linux distros, bundled runtime | Single binary; `chmod +x` and run |
+| `agent-purge-<version>-linux-<arch>.tar.gz` | Major Linux distros | Portable archive with `.desktop`, icon, and a root-free `install.sh` |
+| `agent-purge-<version>-linux-<arch>.deb` | Debian / Ubuntu derivatives | `sudo apt install ./*.deb`, registers `/usr/bin/agent-purge` and a desktop entry |
+| `agent-purge-<version>-linux-<arch>.AppImage` | Major Linux distros (only when produced) | Double-click, or run with `--appimage-extract-and-run` |
 
 Download binaries from [GitHub Releases](https://github.com/ZiChuanLan/agent-purge/releases). Check SHA-256 digests before running. For headless/SSH/WSL environments, run with `agent-purge web --no-open`. The Web interface binds exclusively to loopback (`127.0.0.1`).
 
@@ -119,20 +131,15 @@ agent-purge status
 `arm <h>` attempts to enable all compatible persistent, shim, and slash channels for that harness. Project-level rule channels are managed separately.
 
 ## Supported Harnesses
+**In one line**: hosts that expose a full system-prompt entry point (Codex, OpenCode, DSH, Claude, Gemini CLI, Qwen, Qoder, Kimi, Kiro, CodeBuddy, Grok, omp) get a real replacement; Claude and Kilo leave residue; Antigravity, Crush, Continue, Auggie, Goose and zcode are append-only, so the native identity stays in the prompt.
 
-The following table summarizes verification status across supported agents. Request-level verification confirms prompt presence in actual outgoing network requests under isolated providers.
+Channels, hot-switch timing, measured sizes, built-in safety clauses and residue per harness live on the docs site:
 
-| Harness | Verified Version | In-Session Hot-Switching |
-|---|---|---|
-| pi / omp | 1.4.0 / 18.14.1 | Verified (Dynamic extension callback) |
-| OpenCode 1.x / 2.x | 1.19.5 / 2.2.5 | Verified |
-| DSH (DeepSeek Harness) | 0.2.1-rc.5 | Verified (SDK in-session; Headless, Web, and Desktop all verified via live request capture) |
-| Codex / Claude Code | 0.166.0 / 2.1.316 | Launch entry verified; hot-switching unverified |
-| CodeBuddy / Grok | 2.179.0 / 1.0.73 | Launch entry verified; hot-switching unverified |
-| Kilo Code | @kilocode/cli 7.8.18 | All 4 modes verified via live capture; marker confirmed in system layer |
-| WorkBuddy / WorkBuddy AI | 5.9.3 / 5.9.4 | Identity context verified (`IDENTITY.md`, `SOUL.md`, `USER.md` & `customPrompt`; the international build stores it in `app/app-config.json`); hot-switching unverified |
+- [Support matrix](https://zichuanlan.github.io/agent-purge/en/reference/support) — purge kinds, measured safety clauses, full matrix
+- [Compatibility and limits](https://zichuanlan.github.io/agent-purge/reference/compatibility) — per-harness four-mode capture conclusions and pitfalls (Chinese)
+- [CLI reference](docs/reference/cli.md) — full flags, persona file format, uninstall steps
 
-Detailed compatibility notes, request role mappings, and known limitations are documented in [docs/compatibility.md](docs/compatibility.md).
+Request roles, host residue, browser coverage and known install issues are recorded in the compatibility document; **a model calling itself by the persona name is not acceptance evidence**. After installing or updating plugin code the host still needs a reload — config written, tests passing and taking effect in the current session are different states. Windows and WSL/Linux regression runs are done; macOS is still pending on real hardware.
 
 ## Pause and Uninstall
 

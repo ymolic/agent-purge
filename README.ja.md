@@ -1,5 +1,9 @@
 <div align="center">
 
+<p>
+  <img src="web/assets/logo.svg" width="68" height="68" alt="agent-purge logo" />
+</p>
+
 # agent-purge
 
 **1つのペルソナで、複数のコーディングエージェントを一元管理。**
@@ -16,7 +20,7 @@
   </a>
 </p>
 
-[クイックスタート](#クイックスタート) · [ペルソナとモード](#ペルソナとモード) · [適用スコープ](#適用スコープ) · [対応エージェント](#対応エージェント) · [一時停止とアンインストール](#一時停止とアンインストール) · [免責事項とコンプライアンス](#免責事項とコンプライアンス)
+[ドキュメント](https://zichuanlan.github.io/agent-purge/ja/) · [クイックスタート](#クイックスタート) · [ペルソナとモード](#ペルソナとモード) · [適用スコープ](#適用スコープ) · [対応エージェント](#対応エージェント) · [一時停止とアンインストール](#一時停止とアンインストール) · [免責事項とコンプライアンス](#免責事項とコンプライアンス)
 
 </div>
 
@@ -53,6 +57,10 @@ npx agent-purge web
 
 ![agent-purge コンソール](docs/images/console-desktop.png)
 
+![agent-purge ツール詳細パネル](docs/images/console-detail.png)
+
+![agent-purge プロジェクトルール](docs/images/project-rules.png)
+
 <details>
 <summary>その他のインストール方法：Windows インストーラー、ポータブル版、ヘッドレス環境</summary>
 
@@ -62,6 +70,10 @@ npx agent-purge web
 | `agent-purge-<version>-setup.exe` | Windows、外部 Node.js 20+ | GUI インストール・アンインストール |
 | `agent-purge-<version>.zip` | Windows、外部 Node.js 20+ | 解凍して利用するポータブル版 |
 | `agent-purge.exe` | Windows x64、ランタイム内蔵 | Node 未導入環境向けのスタンドアロン版 |
+| `agent-purge-<version>-linux-x64` / `-linux-arm64` | 主要 Linux ディストリビューション、ランタイム内蔵 | 単一バイナリ。`chmod +x` でそのまま実行できます |
+| `agent-purge-<version>-linux-<arch>.tar.gz` | 主要 Linux ディストリビューション | `.desktop`、アイコン、root 不要の `install.sh` を含むポータブル版 |
+| `agent-purge-<version>-linux-<arch>.deb` | Debian / Ubuntu 系 | `sudo apt install ./*.deb` で `/usr/bin/agent-purge` とデスクトップエントリを登録 |
+| `agent-purge-<version>-linux-<arch>.AppImage` | 主要 Linux ディストリビューション（生成された場合のみ） | ダブルクリック、または `--appimage-extract-and-run` で起動 |
 
 バイナリは [GitHub Releases](https://github.com/ZiChuanLan/agent-purge/releases) よりダウンロードできます。SSH / WSL などのヘッドレス環境では `agent-purge web --no-open` をご利用ください。Web はローカルループバック（`127.0.0.1`）でのみリッスンします。
 
@@ -119,20 +131,15 @@ agent-purge status
 `arm <h>` は利用可能な常驻、shim、slash チャネルをまとめて有効化します。プロジェクトチャネルはディレクトリごとに個別管理します。
 
 ## 対応エージェント
+**一言で**: system prompt 全体の入口を持つホスト（Codex、OpenCode、DSH、Claude、Gemini CLI、Qwen、Qoder、Kimi、Kiro、CodeBuddy、Grok、omp）は本当に置換します。Claude と Kilo は残留あり。Antigravity、Crush、Continue、Auggie、Goose、zcode は追記のみで、元の身元がプロンプトに残ります。
 
-以下は対応エージェントと実際の検証ステータスです。リクエストレベル検証は、分離プロバイダ環境での送信パケット検査によって確認されています。
+チャネル、ホットスイッチのタイミング、実測値、内蔵セーフティ条項、残留はドキュメントサイトにまとめています：
 
-| エージェント | 検証バージョン | セッション内ホットスイッチ |
-|---|---|---|
-| pi / omp | 1.4.0 / 18.14.1 | 検証済み（動的拡張コールバック） |
-| OpenCode 1.x / 2.x | 1.19.5 / 2.2.5 | 検証済み |
-| DSH (DeepSeek Harness) | 0.2.1-rc.5 | 検証済み（SDK セッション内；Headless / Web / Desktop 全形態キャプチャ完了） |
-| Codex / Claude Code | 0.166.0 / 2.1.316 | 起動エントリ検証済み；ホットスイッチ未検証 |
-| CodeBuddy / Grok | 2.179.0 / 1.0.73 | 起動エントリ検証済み；ホットスイッチ未検証 |
-| Kilo Code | @kilocode/cli 7.8.18 | 全4モード実リクエストキャプチャ完了；system 層でマーカー確認 |
-| WorkBuddy / WorkBuddy AI | 5.9.3 / 5.9.4 | 身元設定（`IDENTITY.md`, `SOUL.md`, `USER.md` および `customPrompt`、国際版は `app/app-config.json` に保存）検証済み；ホットスイッチ未検証 |
+- [対応状況](https://zichuanlan.github.io/agent-purge/ja/reference/support) —— 浄化方式、セーフティ条項の実測、対応マトリクス
+- [互換性と既知の制限](https://zichuanlan.github.io/agent-purge/reference/compatibility) —— ホスト別 4 モードのキャプチャ結果と既知の落とし穴（中文）
+- [CLI リファレンス](docs/reference/cli.md) —— 全オプション、ペルソナファイル形式、アンインストール手順
 
-詳細な互換性情報および制限事項は [docs/compatibility.md](docs/compatibility.md) をご参照ください。
+リクエストのロール、ホストの残留、ブラウザ対応、既知のインストール問題は互換性ドキュメントに記録しています。**モデルがペルソナ名で自称することは受け入れ根拠になりません。** プラグインを導入・更新した後はホストの再読み込みが必要で、設定の書き込み・過去のテスト通過・現在のセッションでの実効は別の状態です。Windows と WSL/Linux は回帰済み、macOS は実機検証待ちです。
 
 ## 一時停止とアンインストール
 
