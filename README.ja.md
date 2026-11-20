@@ -53,7 +53,7 @@ npx agent-purge web
 2. 「コンソール」でペルソナとモードを選択して保存し、管理対象のエージェントを有効化します。
 3. エージェントの詳細ガイダンスに従い、セッションを再起動するかプラグインを再読み込みします。
 
-デフォルトのコンソールアドレスは `http://127.0.0.1:7788` です。初回起動時にすべてのエージェントを自動接収することはありません。
+デフォルトのコンソールアドレスは `http://127.0.0.1:7788` です。ポートが予約済み・使用中の場合は `7890–7909` の空きポートに回り、独立したデスクトップウィンドウで開きます。デスクトップ版は単一インスタンスで、もう一度起動しても既存のウィンドウを前面に出すだけで、2 つ目のサービスやページは作りません。閉じたときの動作（終了する／サービスを残す、確認するか）と WebDAV バックアップは「設定」ページで変更でき、すぐ反映されます。初回起動時にすべてのエージェントを自動接収することはありません。
 
 ![agent-purge コンソール](docs/images/console-desktop.png)
 
@@ -131,7 +131,7 @@ agent-purge status
 `arm <h>` は利用可能な常驻、shim、slash チャネルをまとめて有効化します。プロジェクトチャネルはディレクトリごとに個別管理します。
 
 ## 対応エージェント
-**一言で**: system prompt 全体の入口を持つホスト（Codex、OpenCode、DSH、Claude、Gemini CLI、Qwen、Qoder、Kimi、Kiro、CodeBuddy、Grok、omp）は本当に置換します。Claude と Kilo は残留あり。Antigravity、Crush、Continue、Auggie、Goose、zcode は追記のみで、元の身元がプロンプトに残ります。
+**一言で**: system prompt 全体の入口を持つホスト（Codex、OpenCode、DSH、Claude、Qwen、Qoder、Kimi、Kiro、CodeBuddy、Grok、omp）は本当に置換します。Claude と Kilo は残留あり。Antigravity、Crush、Continue、Auggie、Goose、zcode は追記のみで、元の身元がプロンプトに残ります。
 
 チャネル、ホットスイッチのタイミング、実測値、内蔵セーフティ条項、残留はドキュメントサイトにまとめています：
 

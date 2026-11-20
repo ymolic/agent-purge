@@ -20,18 +20,22 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE previous, LPSTR ignored, int sh
     if (*args == L'"') { args++; while (*args && *args != L'"') args++; if (*args) args++; }
     else while (*args && *args > L' ') args++;
     while (*args && *args <= L' ') args++;
-    int written = _snwprintf(command, 32768, L"\"%s\" \"%s\\bin\\agent-purge.mjs\" %s", node, directory, *args ? args : L"web --auto-exit");
+    int written = _snwprintf(command, 32768, L"\"%s\" \"%s\\bin\\agent-purge.mjs\" %s", node, directory, *args ? args : L"web --desktop");
     if (written < 0 || written >= 32768) return 1;
     STARTUPINFOW startup;
     PROCESS_INFORMATION process;
     ZeroMemory(&startup, sizeof(startup)); ZeroMemory(&process, sizeof(process));
     startup.cb = sizeof(startup); startup.dwFlags = STARTF_USESHOWWINDOW; startup.wShowWindow = SW_HIDE;
+    /* Inno Setup checks this name before replacing/removing a running installation. */
+    HANDLE activeMutex = CreateMutexW(NULL, FALSE, L"agent-purge-desktop-active");
     if (!CreateProcessW(node, command, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, directory, &startup, &process)) {
+        if (activeMutex) CloseHandle(activeMutex);
         MessageBoxW(NULL, L"启动失败。请检查安装目录和 Node.js。", L"agent-purge", MB_ICONERROR);
         return 1;
     }
     CloseHandle(process.hThread);
     WaitForSingleObject(process.hProcess, INFINITE);
     DWORD code = 1; GetExitCodeProcess(process.hProcess, &code); CloseHandle(process.hProcess);
+    if (activeMutex) CloseHandle(activeMutex);
     return (int)code;
 }
