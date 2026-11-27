@@ -21,7 +21,8 @@ function makeLnk(path, target) {
 }
 
 function sources(extra = {}) {
-	return { home: "C:\\Users\\t", local: "C:\\Users\\t\\AppData\\Local", roaming: "C:\\Users\\t\\AppData\\Roaming", drives: [], shortcuts: new Map(), entries: [], ...extra };
+	// appDirs 默认给空数组：macOS 上 /Applications 是绝对路径，不显式隔离就会读到真机安装
+	return { home: "C:\\Users\\t", local: "C:\\Users\\t\\AppData\\Local", roaming: "C:\\Users\\t\\AppData\\Roaming", drives: [], shortcuts: new Map(), entries: [], appDirs: [], ...extra };
 }
 
 test("locate: 解析 .lnk 的 LocalBasePath（装在任何盘都指得对）", (t) => {
@@ -82,6 +83,49 @@ test("locate: 最后回落到注册表卸载项", (t) => {
 	assert.equal(hit.source, "registry");
 });
 
+
+// #24：Electron 桌面端的卸载项普遍是 InstallLocation 为空 + DisplayIcon 指到 .ico。
+// 旧逻辑只认「DisplayIcon 是 exe」，这类安装整条被跳过，于是只剩「配置目录存在」一条判据。
+test("locate: 卸载项只有 DisplayIcon 图标、InstallLocation 为空时按图标所在目录认安装（#24）", (t) => {
+	const dir = mkdtempSync(join(tmpdir(), "ap-reg-icon-"));
+	t.after(() => rmSync(dir, { recursive: true, force: true }));
+	writeFileSync(join(dir, "Acme Desktop.exe"), "", "utf8");
+	writeFileSync(join(dir, "uninstallerIcon.ico"), "", "utf8");
+
+	const hit = locate(
+		{ names: ["Acme"], exe: ["Acme Desktop.exe"], folder: ["Acme"] },
+		sources({ entries: [{ name: "Acme Desktop 2.0.23", location: "", icon: join(dir, "uninstallerIcon.ico") }] }),
+	);
+	assert.equal(hit.dir, dir);
+	assert.equal(hit.exe, join(dir, "Acme Desktop.exe"));
+	assert.equal(hit.source, "registry");
+});
+
+test("locate: 图标目录里的 exe 名与声明不一致时仍认目录，但 exe 留空（改名不丢安装）", (t) => {
+	const dir = mkdtempSync(join(tmpdir(), "ap-reg-icon3-"));
+	t.after(() => rmSync(dir, { recursive: true, force: true }));
+	writeFileSync(join(dir, "Renamed Build.exe"), "", "utf8");
+	writeFileSync(join(dir, "uninstallerIcon.ico"), "", "utf8");
+
+	const hit = locate(
+		{ names: ["Acme"], exe: ["Acme Desktop.exe"], folder: ["Acme"] },
+		sources({ entries: [{ name: "Acme Desktop 2.0.23", location: "", icon: join(dir, "uninstallerIcon.ico") }] }),
+	);
+	assert.equal(hit.dir, dir);
+	assert.equal(hit.exe, null);
+});
+
+test("locate: 图标目录里没有 exe 时不当成安装（安装器缓存目录不是安装目录）", (t) => {
+	const dir = mkdtempSync(join(tmpdir(), "ap-reg-icon2-"));
+	t.after(() => rmSync(dir, { recursive: true, force: true }));
+	writeFileSync(join(dir, "productIcon.ico"), "", "utf8");
+
+	const hit = locate(
+		{ names: ["Acme"], exe: ["Acme Desktop.exe"], folder: ["Acme"] },
+		sources({ entries: [{ name: "Acme Desktop 2.0.23", location: "", icon: join(dir, "productIcon.ico") }] }),
+	);
+	assert.equal(hit, null);
+});
 test("locate: 目录名不标准、也没快捷方式时靠盘内浅扫兜底", (t) => {
 	const dir = mkdtempSync(join(tmpdir(), "ap-scan-"));
 	t.after(() => rmSync(dir, { recursive: true, force: true }));

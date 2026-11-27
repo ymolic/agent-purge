@@ -23,6 +23,7 @@ function sandbox(t) {
 		ProgramData: process.env.ProgramData,
 		PUBLIC: process.env.PUBLIC,
 		AGENT_PURGE_DRIVES: process.env.AGENT_PURGE_DRIVES,
+		AGENT_PURGE_APP_DIRS: process.env.AGENT_PURGE_APP_DIRS,
 		PI_DESKTOP_DATA_DIR: process.env.PI_DESKTOP_DATA_DIR,
 		PI_DESKTOP_AGENT_DIR: process.env.PI_DESKTOP_AGENT_DIR,
 	};
@@ -37,6 +38,7 @@ function sandbox(t) {
 	process.env.ProgramData = join(root, "ProgramData");
 	process.env.PUBLIC = join(root, "Public");
 	process.env.AGENT_PURGE_DRIVES = join(root, "no-drive");
+	process.env.AGENT_PURGE_APP_DIRS = join(root, "no-apps");
 	process.env.PATH = "";
 	for (const key of ["PI_DESKTOP_DATA_DIR", "PI_DESKTOP_AGENT_DIR"]) delete process.env[key];
 	t.after(() => {
@@ -181,9 +183,56 @@ test("detect: 命令在就不是残留", (t) => {
 	assert.equal(detect().opencode.residueOnly, false);
 });
 
+test("detect: DSH NEXT 桌面版（D:\\DSH-NEXT\\DSH NEXT\\DSH NEXT.exe）不算只剩残留（#24）", (t) => {
+	const home = sandbox(t);
+	const profile = join(home, ".dsh", "profiles", "desktop");
+	mkdirSync(profile, { recursive: true });
+	writeFileSync(join(profile, "package.json"), "{}\n", "utf8");
+	// anywhere-labs/dsh-desktop 的 dsh-desktop-next：productName "DSH NEXT"、NSIS 允许自选目录
+	const drive = join(dirname(home), "drive");
+	const install = join(drive, "DSH-NEXT", "DSH NEXT");
+	mkdirSync(install, { recursive: true });
+	writeFileSync(join(install, "DSH NEXT.exe"), "", "utf8");
+	process.env.AGENT_PURGE_DRIVES = drive;
+
+	const dsh = detect().dsh;
+	assert.equal(dsh.install, install);
+	assert.equal(dsh.residueOnly, false);
+	assert.equal(dsh.found, true);
+});
+
 test("detect: 什么都没装的家既不是装上也不是残留", (t) => {
 	sandbox(t);
 	const crush = detect().crush;
 	assert.equal(crush.found, false);
 	assert.equal(crush.residueOnly, false);
+});
+
+test("detect: OpenCode 桌面版（Programs/ai.opencode.desktop/OpenCode.exe）不算只剩残留（#25）", (t) => {
+	const home = sandbox(t);
+	const cfg = join(home, ".config", "opencode");
+	mkdirSync(cfg, { recursive: true });
+	writeFileSync(join(cfg, "opencode.jsonc"), "{}\n", "utf8");
+	// Electron 桌面版：目录名是 bundle identifier 风格（ai.opencode.desktop），exe 叫 OpenCode.exe，
+	// 双击启动不经过 PATH —— 只按 CLI 找就只剩「有配置根、没程序本体」= 残留。
+	const install = join(home, "AppData", "Local", "Programs", "ai.opencode.desktop");
+	mkdirSync(install, { recursive: true });
+	writeFileSync(join(install, "OpenCode.exe"), "", "utf8");
+
+	const d = detect();
+	for (const id of ["opencode", "opencode2"]) {
+		assert.equal(d[id].install, install, `${id} 要认出桌面版安装目录`);
+		assert.equal(d[id].bin, null, "桌面版不是 PATH 上的命令，不能凭空造出 bin");
+		assert.equal(d[id].residueOnly, false, `${id} 有程序本体，不是残留`);
+		assert.equal(d[id].found, true);
+	}
+});
+
+test("detect: 安装目录里只有 Uninstall OpenCode.exe 时不算装上（#25）", (t) => {
+	const home = sandbox(t);
+	const install = join(home, "AppData", "Local", "Programs", "ai.opencode.desktop");
+	mkdirSync(install, { recursive: true });
+	writeFileSync(join(install, "Uninstall OpenCode.exe"), "", "utf8");
+
+	assert.notEqual(detect().opencode.install, install, "exe 名精确匹配：Uninstall OpenCode.exe 不能冒充本体");
 });
